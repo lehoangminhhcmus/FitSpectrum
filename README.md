@@ -41,3 +41,51 @@ Phạm vi tương thích gồm các phổ văn bản một hoặc hai cột. Cá
 
 Tham chiếu mô hình: LNHB 2020/15, COLEGRAM User Manual, mục 3.2 và phụ lục 3.
 
+
+## Bản 1.1: thư mục và thống kê
+
+Xem `HUONG-DAN.txt` để cài đặt và dùng **Tệp > Khớp toàn bộ thư mục…**.
+Tính năng này tạo duy nhất một CSV UTF-8 có BOM với một hàng cho mỗi thành phần
+trong mỗi ROI/tệp, bao gồm diện tích, độ bất định, R², χ² Neyman, χ²/bậc tự do,
+phương pháp và trạng thái/lỗi. Chỉ xét tệp ở cấp thư mục hiện tại.
+R² dùng phần dư thô và không xác định khi phổ hằng. χ² dùng phương sai max(1,y)
+cho mọi phương pháp. Các chỉ số cũng hiện ở báo cáo và CSV vùng hiện tại.
+
+Build Windows: `powershell -ExecutionPolicy Bypass -File .\build.ps1 -Test`.
+Để tạo bộ cài, chép exe mới vào `dist`, tạo thư mục `artifacts`, cài NSIS 3,
+rồi chạy `makensis packaging\installer.nsi`. Bộ cài theo tài khoản hiện tại,
+có shortcut và chức năng gỡ cài đặt, yêu cầu .NET Framework 4.5+.
+
+## Bản 1.1.2: sửa lỗi mở ứng dụng trên Windows
+
+Sửa ba lời gọi String.Split thành overload char[] có trong .NET Framework.
+Bản phát hành 1.1.2 được biên dịch với `-nostdlib` và bộ reference assemblies
+Microsoft.NETFramework.ReferenceAssemblies.net45 1.0.3, tránh vô tình sử dụng API
+chỉ có trong thư viện runtime Mono. Chạy lại toàn bộ Smoke thành công.
+
+## Bản 1.2.0: CSV đầy đủ cho các tệp được chọn
+
+**Khớp hàng loạt…** chọn nhiều phổ rồi chọn một CSV chung. Dùng cùng bộ xuất
+với **Khớp toàn bộ thư mục…**. `row_type` phân biệt `area`, `parameter`, `curve`,
+`error`. Bao gồm đường dẫn nguồn, ROI, hàm, diện tích/sai số, giá trị tham số
+ban đầu và sau fit, độ bất định, giới hạn, cố định/nhóm liên kết, R², χ²,
+χ²/bậc tự do, chi phí, phương pháp, số vòng và trạng thái; đường khớp chứa
+X/số đếm/tổng mô hình/phần dư/giá trị từng thành phần tại các mẫu trong ROI.
+Từ chối đầu ra trùng bất kỳ tệp đầu vào nào trước khi ghi.
+
+## Bản 1.2.1: độ rộng và hội tụ
+
+Giới hạn thay đổi độ rộng tối đa 50% giá trị hiện tại trong một bước LM.
+Từ chối khởi tạo độ rộng tự do dưới nửa bước đo; đánh dấu kết quả không hội tụ
+khi độ rộng sau fit không đủ lấy mẫu hoặc Jacobian suy biến. Thêm nút
+Ước lượng độ rộng cho các đỉnh G, ước lượng tâm/biên độ/FWHM theo dữ liệu
+trong vùng giữa các tâm đỉnh, giữ giới hạn và tham số cố định.
+Kiểm tra bổ sung phổ tổng hợp trên trục 2300–3200, biên độ hàng chục nghìn,
+hai đỉnh sigma 60/75 với nền tuyến tính: cả ba phương pháp khôi phục đúng.
+
+## Bản 1.2.2: CSV kết quả cuối gọn
+
+Thay CSV chi tiết bằng một hàng cho mỗi tệp/ROI: tên tệp, chỉ số đánh giá cuối,
+trạng thái và các cột diện tích/tham số cuối/độ bất định cho từng hàm.
+Loại bỏ curve, giá trị ban đầu, cấu hình và thông tin vòng lặp khỏi CSV hàng loạt.
+Giữ ghi lỗi và đánh dấu chưa hội tụ để phân biệt kết quả cần kiểm tra.

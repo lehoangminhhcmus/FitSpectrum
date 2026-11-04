@@ -13,7 +13,9 @@ public class Project {
     public List<Region> Regions = new List<Region>();
 }
 public class FitResult {
-    public double Cost;
+    public string Warning="";
+    public double Cost, RSquared, ChiSquared;
+    public double ReducedChiSquared { get { return ChiSquared / Dof; } }
     public int Dof, Iterations;
     public bool Converged, Covariance;
     public double[] Areas, AreaErrors, Model, Residual;
@@ -34,11 +36,19 @@ public class Fitter {
     readonly int[] rows;
     readonly Group[] free;
     readonly double span;
+    readonly double sampleStep;
     public Fitter(Spectrum spectrum, Region region) {
         data = spectrum; roi = region; span = roi.Right - roi.Left;
         if (!(span > 0) || roi.Components.Count == 0) throw new ArgumentException("ROI bounds or model invalid.");
         rows = Enumerable.Range(0, data.X.Length).Where(i => data.X[i] >= roi.Left && data.X[i] <= roi.Right).ToArray();
         if (roi.Method == 2 && rows.Any(i => data.Y[i] < 0)) throw new ArgumentException("Poisson requires nonnegative counts.");
+        double[] spacings=rows.Skip(1).Select((i,j)=>data.X[i]-data.X[rows[j]]).OrderBy(v=>v).ToArray();
+        sampleStep=spacings.Length==0?0:spacings[spacings.Length/2];
+        foreach(var c in roi.Components.Where(c=>!c.Background && !c.Kind.StartsWith("BETA"))) {
+            var width=c.P.FirstOrDefault(p=>p.Name=="sigma" || p.Name=="gamma_HWHM");
+            if(width!=null && !width.Fixed && width.Value<sampleStep/2)
+                throw new ArgumentException("Độ rộng "+c.Kind+" quá nhỏ so với bước đo. Bấm Ước lượng độ rộng hoặc tăng sigma/gamma trước khi khớp lại.");
+        }
         var parameters = roi.Components.SelectMany(c => c.P).ToArray();
         var groups = parameters.GroupBy(p => string.IsNullOrWhiteSpace(p.Link) ? "#" + Array.IndexOf(parameters,p) : "@" + p.Link.Trim());
         var variables = new List<Group>();
@@ -151,7 +161,13 @@ public class Fitter {
             var step=Solve(matrix,rhs);
             if (step==null) break;
             var old=free.Select(p => p.Value).ToArray();
-            for (int i=0;i<n;i++) free[i].Set(old[i]+step[i]/scale[i]);
+            // Keep positive profile widths away from a single step onto the lower bound.
+            double fraction=1;
+            for(int i=0;i<n;i++) if(free[i].Members.Any(p=>p.Name=="sigma" || p.Name=="gamma_HWHM" || p.Name.StartsWith("tau"))) {
+                double delta=step[i]/scale[i];
+                if(old[i]>0 && Math.Abs(delta)>old[i]*0.5)fraction=Math.Min(fraction,old[i]*0.5/Math.Abs(delta));
+            }
+            for (int i=0;i<n;i++) free[i].Set(old[i]+fraction*step[i]/scale[i]);
             var trial=Residuals(null); double next=Cost(trial);
             if (Valid(next) && next<cost) {
                 double improvement=cost-next;
@@ -163,8 +179,19 @@ public class Fitter {
                 if (damping>1e14) break;
             }
         }
+        if(roi.Components.Where(c=>!c.Background && !c.Kind.StartsWith("BETA")).Any(c=>
+            c.P.Any(p=>!p.Fixed && (p.Name=="sigma" || p.Name=="gamma_HWHM") && p.Value<sampleStep/2))) {
+            result.Converged=false;result.Warning="Độ rộng nhỏ hơn nửa bước đo: đỉnh không được lấy mẫu đủ. Hãy kiểm tra mô hình và ước lượng lại độ rộng.";
+        }
         result.Cost=cost; result.Model=new double[rows.Length];
         result.Residual=Residuals(result.Model);
+        double mean=rows.Average(i=>data.Y[i]), sse=0, sst=0, chi=0;
+        for(int j=0;j<rows.Length;j++) {
+            double y=data.Y[rows[j]], d=y-result.Model[j];
+            sse+=d*d; sst+=(y-mean)*(y-mean); chi+=d*d/Math.Max(1,y);
+        }
+        result.RSquared=sst>0 ? 1-sse/sst : double.NaN;
+        result.ChiSquared=chi;
         result.Areas=Areas(); result.AreaErrors=Enumerable.Repeat(double.NaN,result.Areas.Length).ToArray();
         foreach (var p in roi.Components.SelectMany(c => c.P)) result.Errors[p]=0;
         foreach (var g in free) foreach (var p in g.Members) result.Errors[p]=double.NaN;

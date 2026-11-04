@@ -145,7 +145,7 @@ class MainForm : Form {
         var file=new ToolStripMenuItem("Tệp");
         Item(file,"Mở phổ…",()=>OpenSpectrum()); Item(file,"Mở dự án…",()=>LoadProject());
         Item(file,"Lưu dự án…",()=>SaveProject()); Item(file,"Xuất CSV vùng hiện tại…",()=>ExportCurrent());
-        Item(file,"Khớp hàng loạt…",()=>Batch()); Item(file,"Cộng phổ…",()=>Sum());
+        Item(file,"Khớp toàn bộ thư mục…",()=>BatchFolder()); Item(file,"Khớp hàng loạt…",()=>Batch()); Item(file,"Cộng phổ…",()=>Sum());
         IsMdiContainer=true;
         var view=new ToolStripMenuItem("Xem");
         Item(view,"Thuộc tính đỉnh",()=>FocusWindow(propertiesWindow));
@@ -172,7 +172,7 @@ class MainForm : Form {
             Button("LS",()=>FitBy(0)),Button("χ²",()=>FitBy(1)),Button("Poisson",()=>FitBy(2)),
             Button("Khớp mọi ROI",FitAll),Button("Thuộc tính",()=>FocusWindow(propertiesWindow))});
         var componentBar=new FlowLayoutPanel { Dock=DockStyle.Top,Height=70 };
-        componentBar.Controls.AddRange(new Control[]{types,Button("Thêm hàm",AddComponent),Button("Xóa hàm",DeleteComponent),methods,Label("Vòng"),iterations});
+        componentBar.Controls.AddRange(new Control[]{types,Button("Thêm hàm",AddComponent),Button("Xóa hàm",DeleteComponent),Button("Ước lượng độ rộng",EstimateWidths),methods,Label("Vòng"),iterations});
         var properties=new Panel { Dock=DockStyle.Fill };
         properties.Controls.Add(grid); properties.Controls.Add(report);
         properties.Controls.Add(components); properties.Controls.Add(componentBar);
@@ -346,6 +346,32 @@ class MainForm : Form {
         if(c.Background)c.P[kind=="STEP"||kind=="DSTEP"?1:0].Value=bg;
         r.Components.Add(c); results.Remove(r); RefreshComponents(r.Components.Count-1);
     }
+    void EstimateWidths() {
+        if(Current==null || !grid.EndEdit())return;
+        ApplyBounds();
+        var r=Current;var d=project.Data;
+        var ids=Enumerable.Range(0,d.X.Length).Where(i=>d.X[i]>=r.Left && d.X[i]<=r.Right).ToArray();
+        if(ids.Length<3)throw new ArgumentException("ROI cần ít nhất ba điểm.");
+        var peaks=r.Components.Where(c=>c.Kind=="G").OrderBy(c=>c.P[1].Value).ToArray();
+        for(int k=0;k<peaks.Length;k++) {
+            var c=peaks[k];double center=c.P[1].Value;
+            double lo=k==0?r.Left:(peaks[k-1].P[1].Value+center)/2;
+            double hi=k==peaks.Length-1?r.Right:(center+peaks[k+1].P[1].Value)/2;
+            var local=ids.Where(i=>d.X[i]>=lo && d.X[i]<=hi).ToArray();if(local.Length<3)continue;
+            int top=local.OrderByDescending(i=>d.Y[i]).First();
+            double baseline=Math.Min(d.Y[local.First()],d.Y[local.Last()]);
+            double half=baseline+(d.Y[top]-baseline)/2;
+            int a=top,b=top;
+            while(a>local.First() && d.Y[a]>half)a--;
+            while(b<local.Last() && d.Y[b]>half)b++;
+            double width=(d.X[b]-d.X[a])/2.354820045;
+            if(!c.P[2].Fixed)c.P[2].Value=Math.Max(c.P[2].Min,Math.Min(c.P[2].Max,Math.Max(width,(d.X[local.Last()]-d.X[local.First()])/20)));
+            if(!c.P[0].Fixed)c.P[0].Value=Math.Max(c.P[0].Min,Math.Min(c.P[0].Max,Math.Max(1,d.Y[top]-baseline)));
+            if(!c.P[1].Fixed)c.P[1].Value=Math.Max(c.P[1].Min,Math.Min(c.P[1].Max,d.X[top]));
+        }
+        InvalidateFit();ShowParameters();
+        status.Text="Đã ước lượng tâm, biên độ và sigma cho các đỉnh G không cố định; bấm LS/χ²/Poisson để khớp.";
+    }
     void DeleteComponent() {
         if(CurrentComponent==null)return;
         int i=components.SelectedIndex;
@@ -364,9 +390,11 @@ class MainForm : Form {
         var lines=new List<string> {
             (fit.Converged?"Hội tụ":"Chưa hội tụ")+" | "+fit.Iterations+" vòng | Chi phí "+Short(fit.Cost)+" | Bậc tự do "+fit.Dof+
                 " | Chi phí/bậc "+Short(fit.Cost/fit.Dof),
+            "R-squared = "+Short(fit.RSquared)+" | χ² (Neyman) = "+Short(fit.ChiSquared)+" | χ²/bậc = "+Short(fit.ReducedChiSquared),
             fit.Covariance ? "Diện tích trong ROI (số đếm) ± u(1σ)" : "Không ước lượng được hiệp phương sai."
         };
         for(int i=0;i<Current.Components.Count;i++) lines.Add((i+1)+" "+Current.Components[i].Kind+"   "+Short(fit.Areas[i])+" ± "+Short(fit.AreaErrors[i]));
+        if(!string.IsNullOrEmpty(fit.Warning))lines.Add(fit.Warning);
         report.Lines=lines.ToArray();
     }
     T Busy<T>(Func<T> work) {
@@ -401,7 +429,7 @@ class MainForm : Form {
         if(f!=null) using(var s=File.Create(f))Serializer.Serialize(s,project);
     }
     static void WriteSummary(TextWriter w,int roiIndex,Region r,FitResult fit) {
-        w.WriteLine("roi,component,function,parameter,value,std_uncertainty,converged,cost,dof,method");
+        w.WriteLine("roi,component,function,parameter,value,std_uncertainty,converged,cost,dof,method,r_squared,chi_squared,reduced_chi_squared");
         for(int i=0;i<r.Components.Count;i++) {
             var c=r.Components[i];
             foreach(var p in c.P) SummaryRow(w,roiIndex,i,c.Kind,p.Name,p.Value,fit.Errors[p],fit,r.Method);
@@ -410,7 +438,7 @@ class MainForm : Form {
     }
     static void SummaryRow(TextWriter w,int roi,int i,string kind,string name,double value,double u,FitResult f,int method) {
         w.WriteLine(string.Join(",",new[]{(roi+1).ToString(),(i+1).ToString(),kind,name,N(value),N(u),
-            f.Converged.ToString(),N(f.Cost),f.Dof.ToString(),method.ToString()}));
+            f.Converged.ToString(),N(f.Cost),f.Dof.ToString(),method.ToString(),N(f.RSquared),N(f.ChiSquared),N(f.ReducedChiSquared)}));
     }
     void ExportCurrent() {
         FitResult fit;
@@ -428,28 +456,43 @@ class MainForm : Form {
             }
         }
     }
-    void Batch() {
-        if(!grid.EndEdit())return;
-        ApplyBounds();
-        if(!project.Regions.Any(r=>r.Components.Count>0))throw new InvalidOperationException("Cần ít nhất một ROI có mô hình.");
-        var files=Open(true,Spectra);if(files.Length==0)return;
-        using(var d=new FolderBrowserDialog()) {
-            if(d.ShowDialog(this)!=DialogResult.OK)return;
-            var errors=new List<string>(); int success=0;
-            Busy(()=>{
-                for(int i=0;i<files.Length;i++) try {
-                    var p=CopyProject(project);p.Data=Spectrum.Read(files[i]);
-                    var fits=p.Regions.Select(r=>r.Components.Count==0?null:new Fitter(p.Data,r).Run((int)iterations.Value)).ToArray();
-                    for(int j=0;j<fits.Length;j++) if(fits[j]!=null) {
-                        string name="fit_"+(i+1)+"_"+Path.GetFileNameWithoutExtension(files[i])+"_ROI"+(j+1)+".csv";
-                        using(var w=File.CreateText(Path.Combine(d.SelectedPath,name)))WriteSummary(w,j,p.Regions[j],fits[j]);
-                    }
-                    success++;
-                }catch(Exception e){errors.Add(Path.GetFileName(files[i])+" · "+e.Message);}
-                return success;
-            });
-            MessageBox.Show(this,"Đã xử lý "+success+"/"+files.Length+" tệp.\n"+string.Join("\n",errors.Take(12)),"Khớp hàng loạt");
-        }
+    async void BatchFolder() {
+        try {
+            if(!grid.EndEdit())return;
+            ApplyBounds();
+            if(!project.Regions.Any(r=>r.Components.Count>0))throw new InvalidOperationException("Cần ít nhất một ROI có mô hình.");
+            string folder;
+            using(var d=new FolderBrowserDialog { Description="Chọn thư mục chứa phổ (không gồm thư mục con)" }) {
+                if(d.ShowDialog(this)!=DialogResult.OK)return;
+                folder=d.SelectedPath;
+            }
+            var output=Save(Csv); if(output==null)return;
+            var extensions=new[]{".txt",".csv",".asc",".tsv",".dat"};
+            var files=Directory.GetFiles(folder).Where(f=>extensions.Contains(Path.GetExtension(f).ToLowerInvariant()) &&
+                !string.Equals(Path.GetFullPath(f),Path.GetFullPath(output),StringComparison.OrdinalIgnoreCase)).OrderBy(f=>f).ToArray();
+            if(files.Length==0)throw new InvalidOperationException("Không tìm thấy tệp phổ trong thư mục.");
+            var template=CopyProject(project); int count=(int)iterations.Value;
+            Enabled=false; UseWaitCursor=true;
+            try {
+                var summary=await System.Threading.Tasks.Task.Run(()=>BatchExport.Run(template,files,output,count));
+                MessageBox.Show(this,summary,"Khớp toàn bộ thư mục");
+            } finally { Enabled=true; UseWaitCursor=false; }
+        } catch(Exception e) { MessageBox.Show(this,e.Message,"PhổFit",MessageBoxButtons.OK,MessageBoxIcon.Warning); }
+    }
+    async void Batch() {
+        try {
+            if(!grid.EndEdit())return;
+            ApplyBounds();
+            if(!project.Regions.Any(r=>r.Components.Count>0))throw new InvalidOperationException("Cần ít nhất một ROI có mô hình.");
+            var files=Open(true,Spectra);if(files.Length==0)return;
+            var output=Save(Csv);if(output==null)return;
+            var template=CopyProject(project);int count=(int)iterations.Value;
+            Enabled=false;UseWaitCursor=true;
+            try {
+                var summary=await System.Threading.Tasks.Task.Run(()=>BatchExport.Run(template,files,output,count));
+                MessageBox.Show(this,summary,"Khớp hàng loạt — CSV tổng hợp");
+            } finally { Enabled=true;UseWaitCursor=false; }
+        } catch(Exception e) { MessageBox.Show(this,e.Message,"PhổFit",MessageBoxButtons.OK,MessageBoxIcon.Warning); }
     }
     void Sum() {
         var files=Open(true,Spectra);if(files.Length==0)return;
@@ -505,7 +548,7 @@ class MainForm : Form {
             layout.Controls.AddRange(new Control[]{Label("X mới = a + b·X + c·X². Nhập a, b, c."),t,ok});
             dialog.Controls.Add(layout);dialog.AcceptButton=ok;
             if(dialog.ShowDialog(this)!=DialogResult.OK)return;
-            var coefficients=t.Text.Split(',').Select(Spectrum.Number).ToArray();
+            var coefficients=t.Text.Split(new char[]{','}).Select(Spectrum.Number).ToArray();
             if(coefficients.Length!=3)throw new FormatException("Cần đúng ba hệ số.");
             var x=project.Data.X.Select(v=>coefficients[0]+v*(coefficients[1]+v*coefficients[2])).ToArray();
             if(x.Any(v=>double.IsNaN(v)||double.IsInfinity(v)) || x.Skip(1).Where((v,i)=>v<=x[i]).Any())
@@ -519,8 +562,22 @@ class MainForm : Form {
 }
 static class Program {
     [STAThread] static void Main() {
-        Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);
-        Application.Run(new MainForm());
+        Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+        Application.ThreadException+=(sender,e)=>ReportError(e.Exception);
+        AppDomain.CurrentDomain.UnhandledException+=(sender,e)=>ReportError(e.ExceptionObject as Exception);
+        try {
+            Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new MainForm());
+        } catch(Exception e) { ReportError(e); }
+    }
+    static void ReportError(Exception error) {
+        string path=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"PhoFit","startup-error.log");
+        string detail=error==null ? "Unknown error" : error.ToString();
+        try {
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            File.AppendAllText(path,DateTime.Now.ToString("s")+Environment.NewLine+detail+Environment.NewLine);
+        } catch { path="(Không ghi được nhật ký)"; }
+        MessageBox.Show("Không thể chạy PhổFit.\n"+detail+"\n\nNhật ký: "+path,"PhổFit — lỗi",MessageBoxButtons.OK,MessageBoxIcon.Error);
     }
 }
 }

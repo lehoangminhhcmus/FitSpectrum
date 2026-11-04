@@ -1,0 +1,75 @@
+PHỔFIT 1.1 — WINDOWS
+Dựa trên FitSpectrum commit 5e6e4b836f1ffd27f70823affae1f12f57d08cc8.
+
+CÀI ĐẶT
+Chạy PhoFit-Setup-Windows.exe, chọn Install. Không cần quyền quản trị.
+Hoặc giải nén bản Portable và chạy PhoFit-Colegram.exe.
+Yêu cầu Windows có .NET Framework 4.5 trở lên (Windows 10/11 thường đã có 4.8).
+Bộ cài và chương trình chưa ký số. Không kèm bộ cài .NET.
+
+FIT TOÀN BỘ THƯ MỤC
+1. Mở một phổ đại diện. Đặt và Áp dụng các ROI.
+2. Thêm các hàm cần khớp, đặt tâm/độ rộng, giới hạn và nhóm liên kết.
+   Tất cả hàm trong các ROI có mô hình đều được khớp và xuất, bao gồm nền.
+   Xóa những hàm không muốn sử dụng. Chọn phương pháp LS/χ²/Poisson cho mỗi ROI.
+3. Nên fit thử phổ đại diện và kiểm tra các đỉnh.
+4. Tệp > Khớp toàn bộ thư mục… Chọn thư mục và nơi lưu một tệp CSV tổng hợp.
+   Chương trình lấy .txt, .csv, .asc, .tsv, .dat ở cấp thư mục hiện tại,
+   không lấy thư mục con. Đặt kết quả ở thư mục riêng và giữ thư mục đầu vào
+   chỉ chứa phổ để tránh đọc nhầm các CSV kết quả cũ.
+5. Mỗi hàng CSV tương ứng một hàm của một ROI của một phổ, có diện tích,
+   sai số diện tích, R-squared, chi-squared, reduced chi-squared, bậc tự do,
+   phương pháp, trạng thái hội tụ và hiệp phương sai. Tệp lỗi/ROI lỗi có
+   hàng status=error và nội dung lỗi; chương trình tiếp tục các tệp khác.
+   not_converged nghĩa là kết quả cần kiểm tra, chưa thể coi là fit thành công.
+
+Mỗi phổ bắt đầu từ cùng tham số mẫu. Không thay đổi phổ/mô hình đang mở.
+Các phổ phải dùng cùng đơn vị và trục X bao phủ ROI; không tự hiệu chuẩn.
+
+Ý NGHĨA CHỈ SỐ
+R² = 1 - Σ(y-f)² / Σ(y-trung bình y)², dùng mẫu thuộc ROI.
+Phổ hằng có R² không xác định: hiện dấu —, CSV tổng hợp để trống.
+χ² Neyman = Σ[(y-f)²/max(1,y)], hiển thị cho mọi phương pháp fit.
+Reduced χ² = χ²/(N-p), p là số tham số tự do sau khi gộp nhóm liên kết.
+Chi phí fit vẫn là SSE (LS), χ² Neyman hoặc Poisson deviance tùy phương pháp.
+R² và χ² tính cho tổng mô hình ROI, được lặp trên các hàng hàm của ROI đó.
+Diện tích là tổng giá trị hàm tại các điểm đo trong ROI theo quy ước mã gốc,
+đơn vị số đếm; không phải tích phân liên tục theo trục X hoặc toàn miền.
+
+KIỂM TRA
+Đã biên dịch và chạy kiểm tra số học bằng Mono trên Linux: ba phương pháp fit,
+28 dạng hàm, lưu/mở dự án, công thức chỉ số, xuất thư mục và tiếp tục khi lỗi.
+Chưa chạy kiểm thử giao diện hoặc cài/gỡ trực tiếp trên Windows trong phiên này.
+
+CẬP NHẬT 1.2.0 — CSV CHUNG CHO CÁC TỆP ĐƯỢC CHỌN
+Tệp > Khớp hàng loạt… > chọn nhiều phổ > chọn tên một CSV đầu ra.
+Cả khớp nhiều tệp và khớp thư mục dùng cùng định dạng CSV đầy đủ.
+Lọc cột row_type:
+- area: một hàng/hàm/ROI/phổ, diện tích và độ bất định.
+- parameter: tên, giá trị đầu/giá trị sau fit, sai số, min/max, cố định, nhóm.
+- curve: X, số đếm, tổng mô hình, phần dư theo phương pháp fit và giá trị hàm.
+- error: lỗi đọc phổ hoặc khớp ROI; các phổ khác tiếp tục xử lý.
+Các hàng kết quả có đường dẫn tệp, ROI, hàm, R², χ², χ²/bậc tự do,
+chi phí, phương pháp, số vòng, giới hạn số vòng và trạng thái hội tụ/hiệp phương sai.
+Giới hạn min/max để trống nghĩa là không giới hạn; chỉ số/sai số không xác định
+cũng để trống. Chỉ các điểm nằm trong ROI được xuất đường khớp.
+Tổng mô hình và phần dư lặp theo từng thành phần ở các hàng curve;
+không cộng tổng mô hình giữa các hàm. Không cộng diện tích các ROI chồng nhau
+nếu muốn tránh đếm trùng. CSV UTF-8 có BOM để Excel nhận tiếng Việt.
+Các phần mô tả CSV thư mục chỉ có diện tích ở trên áp dụng cho phiên bản cũ.
+
+CẬP NHẬT 1.2.1 — ĐỈNH CO THÀNH VẠCH NHỌN
+Giới hạn bước cập nhật sigma/gamma/tau trong tối ưu. Mô hình suy biến hoặc
+độ rộng dưới nửa bước đo không được báo hội tụ thành công.
+Nếu đã có sigma=0.01 trong phổ bước đo khoảng 1, bấm Ước lượng độ rộng,
+rồi bấm LS/χ²/Poisson. Nút này ước lượng lại tâm, biên độ và sigma của các
+đỉnh G chưa cố định, trong các giới hạn đã đặt. Không đổi min/max hay tham số
+cố định. Kiểm tra lại mô hình nền và giới hạn trước khi dùng diện tích.
+
+CẬP NHẬT 1.2.2 — CSV CHỈ CHỨA KẾT QUẢ CUỐI
+Khớp hàng loạt và khớp thư mục tạo bảng gọn: một hàng cho mỗi tệp/ROI.
+Các cột: tên tệp, ROI, R², χ², χ²/bậc tự do, chi phí cuối, trạng thái;
+sau đó diện tích, tham số cuối và sai số cho từng hàm (ví dụ G_2_center).
+Không xuất điểm đường khớp, giá trị khởi tạo, cấu hình hay thông tin vòng lặp.
+Các mô tả row_type/curve phía trên chỉ áp dụng cho bản cũ.
+Kết quả không hội tụ được đánh dấu not_converged; tệp/ROI lỗi có status=error.

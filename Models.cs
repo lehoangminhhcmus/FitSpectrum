@@ -19,7 +19,7 @@ public class Spectrum {
         int columns = 0, line = 0;
         foreach (string raw in File.ReadLines(file)) {
             line++;
-            string row = raw.Split('#')[0].Trim();
+            string row = raw.Split(new char[]{'#'})[0].Trim();
             if (row.Length == 0 || row.StartsWith("//")) continue;
             var fields = Regex.Split(row, @"\s*[,;]\s*|\s+");
             if (columns == 0 && Regex.IsMatch(row, @"^(channel|energy|kenh|x|counts|count|dem)(\b|[,;])", RegexOptions.IgnoreCase)) continue;
@@ -49,7 +49,7 @@ public class Component {
     public string Kind;
     public List<Parameter> P = new List<Parameter>();
     public bool Background { get { return Kind == "POLY" || Kind == "EXPO" || Kind == "STEP" || Kind == "DSTEP"; } }
-    public static readonly string[] Kinds = ("G TG DTG ALPHA ALPHA3 V TV DTV L GS VS AS A3S HYPER HYPERV LOWE LOWEV POLY EXPO STEP DSTEP BETA1 BETA2 BETA3 BETA4 BETA5 BETA6 BETA7").Split(' ');
+    public static readonly string[] Kinds = ("G TG DTG ALPHA ALPHA3 V TV DTV L GS VS AS A3S HYPER HYPERV LOWE LOWEV POLY EXPO STEP DSTEP BETA1 BETA2 BETA3 BETA4 BETA5 BETA6 BETA7").Split(new char[]{' '});
     bool Voigt { get { return Kind == "V" || Kind == "TV" || Kind == "DTV" || Kind == "VS" || Kind == "HYPERV" || Kind == "LOWEV"; } }
     bool Hyper { get { return Kind.StartsWith("HYPER") || Kind.StartsWith("LOWE"); } }
     bool LinkedWidth { get { return Kind == "GS" || Kind == "VS" || Kind == "AS" || Kind == "A3S"; } }
