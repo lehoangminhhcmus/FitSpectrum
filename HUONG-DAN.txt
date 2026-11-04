@@ -73,3 +73,6 @@ sau đó diện tích, tham số cuối và sai số cho từng hàm (ví dụ G
 Không xuất điểm đường khớp, giá trị khởi tạo, cấu hình hay thông tin vòng lặp.
 Các mô tả row_type/curve phía trên chỉ áp dụng cho bản cũ.
 Kết quả không hội tụ được đánh dấu not_converged; tệp/ROI lỗi có status=error.
+
+CẬP NHẬT 1.2.3 — GIỚI THIỆU
+Trợ giúp > Giới thiệu… hiển thị thông tin Lê Hoàng Minh và email liên hệ.

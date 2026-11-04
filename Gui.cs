@@ -161,6 +161,7 @@ class MainForm : Form {
         Item(windows,"Xếp tầng",()=>LayoutMdi(MdiLayout.Cascade));
         menu.MdiWindowListItem=windows;
         var help=new ToolStripMenuItem("Trợ giúp");
+        Item(help,"Giới thiệu…",About);
         Item(help,"Thao tác",()=>MessageBox.Show(this,"Kéo trên Phổ toàn phần để đặt ROI. Nhấp trong ROI để chọn tâm khởi tạo. Chọn hàm ở Thuộc tính đỉnh, sau đó bấm LS, χ² hoặc Poisson.","PhổFit"));
         menu.Items.AddRange(new ToolStripItem[]{file,view,display,windows,help}); MainMenuStrip=menu;
         var bar=new FlowLayoutPanel { Dock=DockStyle.Top,Height=36,Padding=new Padding(3),WrapContents=false,AutoScroll=true,BackColor=SystemColors.Control };
@@ -199,6 +200,21 @@ class MainForm : Form {
         propertiesWindow=Child("Thuộc tính đỉnh",properties);
         Shown+=(s,e)=>{foreach(Form f in MdiChildren)f.Show();Arrange();};
         ResizeEnd+=(s,e)=>Arrange();
+    }
+    void About() {
+        using(var dialog=new Form { Text="Giới thiệu PhổFit",ClientSize=new Size(550,300),
+            FormBorderStyle=FormBorderStyle.FixedDialog,StartPosition=FormStartPosition.CenterParent,
+            MaximizeBox=false,MinimizeBox=false,ShowInTaskbar=false,Font=Font }) {
+            var title=new Label { Text="PhổFit 1.2.3",AutoSize=true,Location=new Point(24,20),Font=new Font(Font.FontFamily,14,FontStyle.Bold) };
+            var details=new Label { AutoSize=true,Location=new Point(24,60),Text=
+                "Lê Hoàng Minh\nBộ môn Vật lý hạt nhân\nKhoa Vật lý-Vật lý Kỹ thuật\nTrường Đại học khoa học tự nhiên\nĐại học Quốc gia Thành phố Hồ Chí Minh" };
+            var email=new LinkLabel { AutoSize=true,Location=new Point(24,190),Text="email: hoangminh@hcmus.edu.vn" };
+            email.Links.Clear();email.Links.Add(7,"hoangminh@hcmus.edu.vn".Length);
+            email.LinkClicked+=(sender,e)=>Safe(()=>System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("mailto:hoangminh@hcmus.edu.vn") { UseShellExecute=true }));
+            var close=new Button { Text="Đóng",DialogResult=DialogResult.OK,Location=new Point(440,250),Size=new Size(85,30) };
+            dialog.Controls.AddRange(new Control[]{title,details,email,close});
+            dialog.AcceptButton=close;dialog.CancelButton=close;dialog.ShowDialog(this);
+        }
     }
     Form Child(string title,Control content) {
         var f=new Form { Text=title,MdiParent=this,StartPosition=FormStartPosition.Manual,ShowIcon=false,MinimumSize=new Size(250,140) };

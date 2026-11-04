@@ -1,7 +1,7 @@
 Unicode True
 !include "MUI2.nsh"
 Name "PhoFit"
-OutFile "..\artifacts\PhoFit-Setup-Windows-v1.2.2.exe"
+OutFile "..\artifacts\PhoFit-Setup-Windows-v1.2.3.exe"
 InstallDir "$LOCALAPPDATA\Programs\PhoFit"
 RequestExecutionLevel user
 !define MUI_ABORTWARNING
@@ -37,7 +37,7 @@ Section "PhoFit"
   CreateShortcut "$DESKTOP\PhoFit.lnk" "$INSTDIR\PhoFit-Colegram.exe"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\PhoFit" "DisplayName" "PhoFit"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\PhoFit" "UninstallString" '$\"$INSTDIR\Uninstall.exe$\"'
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\PhoFit" "DisplayVersion" "1.2.2"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\PhoFit" "DisplayVersion" "1.2.3"
 SectionEnd
 Section "Uninstall"
   Delete "$INSTDIR\PhoFit-Colegram.exe"

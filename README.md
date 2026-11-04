@@ -1,4 +1,4 @@
-# PhổFit
+﻿# PhổFit
 
 Ứng dụng C# WinForms cho Windows có .NET Framework 4.x. Mở PhoFit-Colegram.exe để chạy.
 Mã nguồn đi kèm. Trong thư mục đã giải nén, chạy `powershell -File .\build.ps1`.
@@ -89,3 +89,16 @@ Thay CSV chi tiết bằng một hàng cho mỗi tệp/ROI: tên tệp, chỉ s�
 trạng thái và các cột diện tích/tham số cuối/độ bất định cho từng hàm.
 Loại bỏ curve, giá trị ban đầu, cấu hình và thông tin vòng lặp khỏi CSV hàng loạt.
 Giữ ghi lỗi và đánh dấu chưa hội tụ để phân biệt kết quả cần kiểm tra.
+
+## Bản 1.2.3: Giới thiệu
+
+Chọn **Trợ giúp → Giới thiệu…** để xem thông tin tác giả và mở liên kết email.
+
+Lê Hoàng Minh<br>
+Bộ môn Vật lý hạt nhân<br>
+Khoa Vật lý-Vật lý Kỹ thuật<br>
+Trường Đại học khoa học tự nhiên<br>
+Đại học Quốc gia Thành phố Hồ Chí Minh<br>
+email: [hoangminh@hcmus.edu.vn](mailto:hoangminh@hcmus.edu.vn)
+
+Bộ cài hiện tại: [PhoFit-Setup-Windows-v1.2.3.exe](artifacts/PhoFit-Setup-Windows-v1.2.3.exe).
