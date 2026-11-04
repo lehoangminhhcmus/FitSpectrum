@@ -165,7 +165,8 @@ class MainForm : Form {
         Item(help,"Thao tác",()=>MessageBox.Show(this,"Kéo trên Phổ toàn phần để đặt ROI. Nhấp trong ROI để chọn tâm khởi tạo. Chọn hàm ở Thuộc tính đỉnh, sau đó bấm LS, χ² hoặc Poisson.","PhổFit"));
         menu.Items.AddRange(new ToolStripItem[]{file,view,display,windows,help}); MainMenuStrip=menu;
         var bar=new FlowLayoutPanel { Dock=DockStyle.Top,Height=36,Padding=new Padding(3),WrapContents=false,AutoScroll=true,BackColor=SystemColors.Control };
-        types.Items.AddRange(Component.Kinds); types.SelectedIndex=0;
+        types.Items.AddRange(Component.Kinds.Select(k=>Component.FullName(k)).ToArray()); types.SelectedIndex=0;
+        types.Width=300;types.DropDownWidth=650;components.HorizontalScrollbar=true;
         methods.Items.AddRange(new object[]{"Bình phương tối thiểu","Chi bình phương Neyman","Poisson (deviance)"}); methods.Width=190;
         bar.Controls.AddRange(new Control[]{Button("Mở",OpenSpectrum),Button("Toàn phổ",()=>overview.ResetView()),
             Button("Chọn ROI",()=>FocusWindow(spectrumWindow)),regions,Button("+ ROI",NewRegion),Button("Xóa ROI",DeleteRegion),
@@ -205,7 +206,7 @@ class MainForm : Form {
         using(var dialog=new Form { Text="Giới thiệu PhổFit",ClientSize=new Size(550,300),
             FormBorderStyle=FormBorderStyle.FixedDialog,StartPosition=FormStartPosition.CenterParent,
             MaximizeBox=false,MinimizeBox=false,ShowInTaskbar=false,Font=Font }) {
-            var title=new Label { Text="PhổFit 1.2.3",AutoSize=true,Location=new Point(24,20),Font=new Font(Font.FontFamily,14,FontStyle.Bold) };
+            var title=new Label { Text="PhổFit 1.2.4",AutoSize=true,Location=new Point(24,20),Font=new Font(Font.FontFamily,14,FontStyle.Bold) };
             var details=new Label { AutoSize=true,Location=new Point(24,60),Text=
                 "Lê Hoàng Minh\nBộ môn Vật lý hạt nhân\nKhoa Vật lý-Vật lý Kỹ thuật\nTrường Đại học khoa học tự nhiên\nĐại học Quốc gia Thành phố Hồ Chí Minh" };
             var email=new LinkLabel { AutoSize=true,Location=new Point(24,190),Text="email: hoangminh@hcmus.edu.vn" };
@@ -302,7 +303,7 @@ class MainForm : Form {
     }
     void RefreshComponents(int index) {
         updating=true; components.Items.Clear();
-        if(Current!=null) for(int i=0;i<Current.Components.Count;i++) components.Items.Add((i+1)+"  "+Current.Components[i].Kind);
+        if(Current!=null) for(int i=0;i<Current.Components.Count;i++) components.Items.Add((i+1)+"  "+Component.FullName(Current.Components[i].Kind));
         components.SelectedIndex=Math.Min(index,components.Items.Count-1);
         updating=false; ShowParameters(); RefreshPlot();
     }
@@ -356,7 +357,7 @@ class MainForm : Form {
         double bg=Math.Max(0,(d.Y[rows.First()]+d.Y[rows.Last()])/2);
         double target=cursor>=r.Left && cursor<=r.Right ? cursor : d.X[rows.OrderByDescending(i=>d.Y[i]).First()];
         int j=rows.OrderBy(i=>Math.Abs(d.X[i]-target)).First();
-        string kind=(string)types.SelectedItem;
+        string kind=Component.Kinds[types.SelectedIndex];
         var c=Component.Create(kind,d.X[j],Math.Max(1,d.Y[j]-bg),
             (d.X[rows.Last()]-d.X[rows.First()])/(rows.Length-1),r.Left,r.Right);
         if(c.Background)c.P[kind=="STEP"||kind=="DSTEP"?1:0].Value=bg;
@@ -386,7 +387,7 @@ class MainForm : Form {
             if(!c.P[1].Fixed)c.P[1].Value=Math.Max(c.P[1].Min,Math.Min(c.P[1].Max,d.X[top]));
         }
         InvalidateFit();ShowParameters();
-        status.Text="Đã ước lượng tâm, biên độ và sigma cho các đỉnh G không cố định; bấm LS/χ²/Poisson để khớp.";
+        status.Text="Đã ước lượng tâm, biên độ và sigma cho các đỉnh Gaussian không cố định; bấm LS/χ²/Poisson để khớp.";
     }
     void DeleteComponent() {
         if(CurrentComponent==null)return;
@@ -409,7 +410,7 @@ class MainForm : Form {
             "R-squared = "+Short(fit.RSquared)+" | χ² (Neyman) = "+Short(fit.ChiSquared)+" | χ²/bậc = "+Short(fit.ReducedChiSquared),
             fit.Covariance ? "Diện tích trong ROI (số đếm) ± u(1σ)" : "Không ước lượng được hiệp phương sai."
         };
-        for(int i=0;i<Current.Components.Count;i++) lines.Add((i+1)+" "+Current.Components[i].Kind+"   "+Short(fit.Areas[i])+" ± "+Short(fit.AreaErrors[i]));
+        for(int i=0;i<Current.Components.Count;i++) lines.Add((i+1)+" "+Component.FullName(Current.Components[i].Kind)+"   "+Short(fit.Areas[i])+" ± "+Short(fit.AreaErrors[i]));
         if(!string.IsNullOrEmpty(fit.Warning))lines.Add(fit.Warning);
         report.Lines=lines.ToArray();
     }
@@ -448,8 +449,8 @@ class MainForm : Form {
         w.WriteLine("roi,component,function,parameter,value,std_uncertainty,converged,cost,dof,method,r_squared,chi_squared,reduced_chi_squared");
         for(int i=0;i<r.Components.Count;i++) {
             var c=r.Components[i];
-            foreach(var p in c.P) SummaryRow(w,roiIndex,i,c.Kind,p.Name,p.Value,fit.Errors[p],fit,r.Method);
-            SummaryRow(w,roiIndex,i,c.Kind,"ROI_area",fit.Areas[i],fit.AreaErrors[i],fit,r.Method);
+            foreach(var p in c.P) SummaryRow(w,roiIndex,i,Component.FullName(c.Kind),p.Name,p.Value,fit.Errors[p],fit,r.Method);
+            SummaryRow(w,roiIndex,i,Component.FullName(c.Kind),"ROI_area",fit.Areas[i],fit.AreaErrors[i],fit,r.Method);
         }
     }
     static void SummaryRow(TextWriter w,int roi,int i,string kind,string name,double value,double u,FitResult f,int method) {
@@ -462,7 +463,7 @@ class MainForm : Form {
         var f=Save(Csv); if(f==null)return;
         using(var w=File.CreateText(f))WriteSummary(w,regions.SelectedIndex,Current,fit);
         using(var w=File.CreateText(Path.ChangeExtension(f,"curve.csv"))) {
-            w.WriteLine("x,counts,model,residual,"+string.Join(",",Current.Components.Select((c,i)=>c.Kind+"_"+(i+1))));
+            w.WriteLine("x,counts,model,residual,"+string.Join(",",Current.Components.Select((c,i)=>Component.FullName(c.Kind)+"_"+(i+1))));
             int j=0;
             for(int i=0;i<project.Data.X.Length;i++) {
                 double x=project.Data.X[i]; if(x<Current.Left || x>Current.Right)continue;

@@ -47,7 +47,7 @@ public class Fitter {
         foreach(var c in roi.Components.Where(c=>!c.Background && !c.Kind.StartsWith("BETA"))) {
             var width=c.P.FirstOrDefault(p=>p.Name=="sigma" || p.Name=="gamma_HWHM");
             if(width!=null && !width.Fixed && width.Value<sampleStep/2)
-                throw new ArgumentException("Độ rộng "+c.Kind+" quá nhỏ so với bước đo. Bấm Ước lượng độ rộng hoặc tăng sigma/gamma trước khi khớp lại.");
+                throw new ArgumentException("Độ rộng "+Component.FullName(c.Kind)+" quá nhỏ so với bước đo. Bấm Ước lượng độ rộng hoặc tăng sigma/gamma trước khi khớp lại.");
         }
         var parameters = roi.Components.SelectMany(c => c.P).ToArray();
         var groups = parameters.GroupBy(p => string.IsNullOrWhiteSpace(p.Link) ? "#" + Array.IndexOf(parameters,p) : "@" + p.Link.Trim());

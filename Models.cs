@@ -50,6 +50,39 @@ public class Component {
     public List<Parameter> P = new List<Parameter>();
     public bool Background { get { return Kind == "POLY" || Kind == "EXPO" || Kind == "STEP" || Kind == "DSTEP"; } }
     public static readonly string[] Kinds = ("G TG DTG ALPHA ALPHA3 V TV DTV L GS VS AS A3S HYPER HYPERV LOWE LOWEV POLY EXPO STEP DSTEP BETA1 BETA2 BETA3 BETA4 BETA5 BETA6 BETA7").Split(new char[]{' '});
+    public static string FullName(string kind) {
+        switch(kind) {
+            case "G": return "Gaussian";
+            case "TG": return "Gaussian với một đuôi hàm mũ";
+            case "DTG": return "Gaussian với hai đuôi hàm mũ trái và phải";
+            case "ALPHA": return "Đỉnh alpha với hai đuôi hàm mũ";
+            case "ALPHA3": return "Đỉnh alpha với ba đuôi hàm mũ";
+            case "V": return "Voigt xấp xỉ";
+            case "TV": return "Voigt xấp xỉ với một đuôi hàm mũ";
+            case "DTV": return "Voigt xấp xỉ với hai đuôi hàm mũ trái và phải";
+            case "L": return "Lorentzian";
+            case "GS": return "Gaussian với độ rộng liên kết theo tâm đỉnh";
+            case "VS": return "Voigt xấp xỉ với độ rộng liên kết theo tâm đỉnh";
+            case "AS": return "Đỉnh alpha với hai đuôi và độ rộng dùng chung";
+            case "A3S": return "Đỉnh alpha với ba đuôi và độ rộng dùng chung";
+            case "HYPER": return "Gaussian với đuôi hàm mũ và nền bậc thang";
+            case "HYPERV": return "Voigt xấp xỉ với đuôi hàm mũ và nền bậc thang";
+            case "LOWE": return "Gaussian với đuôi hàm mũ và nền bậc thang có cạnh năng lượng thấp";
+            case "LOWEV": return "Voigt xấp xỉ với đuôi hàm mũ và nền bậc thang có cạnh năng lượng thấp";
+            case "POLY": return "Nền đa thức";
+            case "EXPO": return "Nền hàm mũ";
+            case "STEP": return "Nền một bậc thang làm trơn";
+            case "DSTEP": return "Nền hai bậc thang làm trơn";
+            case "BETA1": return "Phổ beta chuyển dời cho phép";
+            case "BETA2": return "Phổ beta chuyển dời cấm bậc một không duy nhất";
+            case "BETA3": return "Phổ beta chuyển dời cấm bậc một duy nhất";
+            case "BETA4": return "Phổ beta chuyển dời cấm bậc hai không duy nhất";
+            case "BETA5": return "Phổ beta chuyển dời cấm bậc hai duy nhất";
+            case "BETA6": return "Phổ beta chuyển dời cấm bậc ba không duy nhất";
+            case "BETA7": return "Phổ beta chuyển dời cấm bậc ba duy nhất";
+            default: return kind;
+        }
+    }
     bool Voigt { get { return Kind == "V" || Kind == "TV" || Kind == "DTV" || Kind == "VS" || Kind == "HYPERV" || Kind == "LOWEV"; } }
     bool Hyper { get { return Kind.StartsWith("HYPER") || Kind.StartsWith("LOWE"); } }
     bool LinkedWidth { get { return Kind == "GS" || Kind == "VS" || Kind == "AS" || Kind == "A3S"; } }

@@ -1,0 +1,3 @@
+48838ad20fa0513ccb733c5e74068f119ea321edcce113b744fc6b50cc201d45  PhoFit-Portable-Windows-v1.2.4.zip
+40de80e153ac66f4d4c9f9e1f3938ce9bf4aa6cdde69a55d31f1f0749041fb21  PhoFit-Setup-Windows-v1.2.4.exe
+17966adeee1ab228b29b6cff1d90a99a95453e059b04d907d966243684ac9313  PhoFit-Source-v1.2.4.zip

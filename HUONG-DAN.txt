@@ -76,3 +76,8 @@ Kết quả không hội tụ được đánh dấu not_converged; tệp/ROI l�
 
 CẬP NHẬT 1.2.3 — GIỚI THIỆU
 Trợ giúp > Giới thiệu… hiển thị thông tin Lê Hoàng Minh và email liên hệ.
+
+CẬP NHẬT 1.2.4 — TÊN HÀM ĐẦY ĐỦ
+Danh sách chọn hàm, danh sách thành phần, báo cáo và CSV dùng tên đầy đủ.
+Ví dụ Gaussian thay cho G; Lorentzian thay cho L; Nền đa thức thay cho POLY.
+Tên cột CSV Gaussian_2_area là diện tích hàm Gaussian ở vị trí thứ hai.

@@ -9,7 +9,7 @@ namespace PhoFit {
 public static class BatchExport {
     static string N(double v) { return double.IsNaN(v) || double.IsInfinity(v) ? "" : v.ToString("G17",CultureInfo.InvariantCulture); }
     static string Q(string v) { return "\""+(v??"").Replace("\"","\"\"")+"\""; }
-    static string Prefix(Component c,int index) { return c.Kind+"_"+(index+1)+"_"; }
+    static string Prefix(Component c,int index) { return Component.FullName(c.Kind)+"_"+(index+1)+"_"; }
     static string[] Columns(Project template) {
         var columns=new List<string> { "file","roi","r_squared","chi_squared","reduced_chi_squared","cost","converged","status","error" };
         foreach(var r in template.Regions) for(int k=0;k<r.Components.Count;k++) {

@@ -102,3 +102,10 @@ Trường Đại học khoa học tự nhiên<br>
 email: [hoangminh@hcmus.edu.vn](mailto:hoangminh@hcmus.edu.vn)
 
 Bộ cài hiện tại: [PhoFit-Setup-Windows-v1.2.3.exe](artifacts/PhoFit-Setup-Windows-v1.2.3.exe).
+
+## Bản 1.2.4: tên hàm đầy đủ
+
+Danh sách hàm và báo cáo/CSV hiển thị tên đầy đủ: Gaussian, Lorentzian,
+Nền đa thức, Nền hàm mũ và tên mô tả đầy đủ cho các biến thể đuôi/độ rộng/phổ beta.
+Mã mô hình nội bộ trong dự án được giữ nguyên để tương thích tệp cũ.
+CSV hàng loạt vẫn chỉ xuất các giá trị cuối cho mỗi tệp/ROI.
